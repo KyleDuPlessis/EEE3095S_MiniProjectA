@@ -9,13 +9,20 @@ Hendri Vermeulen - VRMHEN004
 """
 TO DO LIST:
 
-[- map variables to pins to be used from GPIO pinout diagram - currently set to "0"]
+1. Map variables to pins to be used from GPIO pinout diagram - all currently set to "0"
 
-1. Currently have -> "RTC Time", "Sys Timer", "Humidity", "Temp", "Light"
+2. Currently have -> "RTC Time", "Sys Timer", "Humidity", "Temp", "Light"
 (there are 7 in total) - still need to implement the others 
 + interface with RTC to get the correct RTC Time value to be printed out under "RTC Time"
 
-2. Blynk app once this ^ is completely done + working
+3. Alarm - "You can flash an LED using a PWM signal, you can play audio through the audio jack, or you
+can buy a buzzer from WhiteLab." 
+There are no buzzers available - got a speaker and will connect to Pi using an aux cable 
+and we can play a sound mp3 audio file buzz sound - but not through the DAC.
+
+[http://soundbible.com/2197-Analog-Watch-Alarm.html]
+
+4. Blynk app once all this ^ is completely done + working
 
 """
 
@@ -183,21 +190,41 @@ def getCurrentLoggingInformation():
 
     return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue]
 
+# main function - program logic
+def main():
+    pass # waiting for button presses - keep program running
+    #x = 1
+    #print("write your logic here")
 
-# main function
-try:
-    os.system('clear')
-    print("Ready...")
-    print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
-                                                  "Light"))  # 5 values to printed to screen (7 in total - add others later)
-    displayLoggingInformation()
+# only run the functions if
+if __name__ == "__main__":
 
-    # waiting for button presses - keep program running
-    while (1):
-        pass
+    # make sure the GPIO is stopped correctly
+    try:
 
-except KeyboardInterrupt:
-    print("Closing program...")
-    # release all resources
-    programClosed = True
-    GPIO.cleanup()
+        os.system('clear')
+        print("Ready...")
+        print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
+                                                      "Light"))  # 5 values to printed to screen (7 in total - add others later)
+        displayLoggingInformation()
+
+        # waiting for button presses - keep program running
+        while True:
+            main()
+
+    except KeyboardInterrupt:
+
+        print("Exiting gracefully")
+        # release all resources
+        programClosed = True
+        # turn off GPIOs
+        GPIO.cleanup()
+
+    except e:
+
+        print("Some other error occurred")
+        print(e.message)
+        # release all resources
+        programClosed = True
+        # turn off GPIOs
+        GPIO.cleanup()
