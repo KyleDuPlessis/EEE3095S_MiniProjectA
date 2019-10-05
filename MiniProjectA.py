@@ -37,20 +37,24 @@ import os
 
 # select pins to be used from GPIO pinout diagram
 # button pins
-resetSystemTimerButton = 0
-changeReadingIntervalButton = 0
-stopStartMonitoringButton = 0
+resetSystemTimerButton = 17
+changeReadingIntervalButton = 27
+stopStartMonitoringButton = 22
 
-# SPI pins
-MOSI = 0
-MISO = 0
-CLK = 0
-CS = 0
+# SPI0 ADC pins
+MOSI = 10
+MISO = 9
+CLK = 11
+CS = 8
+
+#RTC I2C pins
+SDA = 2
+SCL = 3
 
 # ADC analog input pins (CH0-CH7)
 potentiometer = 0
-temperatureSensor = 0
-lightSensor = 0
+temperatureSensor = 1
+lightSensor = 7
 
 # reference values for light sensor according to datasheet
 lightSensor_MAX = 950  # when shining phone torch at light sensor
@@ -67,7 +71,8 @@ readingInterval = 1  # set reading interval to 1 second initially
 programClosed = False
 
 # set mode to BOARD pin numbering system
-GPIO.setmode(GPIO.BOARD)
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
 # configure push buttons as input in pull up mode
 GPIO.setup(resetSystemTimerButton, GPIO.IN, pull_up_down=GPIO.PUD_UP)
