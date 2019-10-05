@@ -32,6 +32,7 @@ import Adafruit_MCP3008
 import datetime
 import threading
 import os
+import Adafruit_GPIO.I2C as I2C
 
 # initialise global variables
 
@@ -47,9 +48,41 @@ MISO = 9
 CLK = 11
 CS = 8
 
-#RTC I2C pins
-SDA = 2
-SCL = 3
+#Get I2C RTC Connection
+RTCAddr = 0x6f
+RTCSecReg = 0x00
+RTCMinReg = 0x01
+RTCHourReg = 0x02
+TIMEZONE = 2
+RTC = I2C.get_i2c_device(RTCAddr)
+
+#Convert int to RTC BCD seconds
+def decCompensation(units):
+    unitsU = units % 10;
+
+    if (units >= 50):
+        units = 0x50 + unitsU;
+    elif (units >= 40):
+        units = 0x40 + unitsU;
+    elif (units >= 30):
+        units = 0x30 + unitsU;
+    elif (units >= 20):
+        units = 0x20 + unitsU;
+    elif (units >= 10):
+	units = 0x10 + unitsU;
+    return units;
+
+#init RTC
+#get current time
+currentDate = datetime.datetime.now()
+#Set masks
+RTCSecMask = 0b10000000
+RTCMinMask = 0b0
+RTCHourMask = 0b0
+#Update RTC
+RTC.write8(RTCSecReg, RTCSecMask | decCompensation(int(currentDate.strftime("%S"))))
+RTC.write8(RTCMinReg, RTCMinMask | int(currentDate.strftime("%M")))
+RTC.write8(RTCHourReg, RTCHourMask | int(currentDate.strftime("%H")))
 
 # ADC analog input pins (CH0-CH7)
 potentiometer = 0
@@ -180,13 +213,25 @@ def convertLightSensor(ADCValue):
             lightSensor_MAX - lightSensor_MIN)  # [check if calculation is correct / reports correct value between 0 and 1023]
     return "{:.0f}%".format(value)
 
+#Convert from BCD to int
+def convertRTCSecBCDtoInt(bcd):
+	firstDigit = bcd & 0b00001111
+	secondDigit = (bcd & 0b01110000) >> 4;
+	return secondDigit*10 + firstDigit
+
+#Gets the time from RTC
+def getTimeFromRTC():
+	sec = convertRTCSecBCDtoInt(RTC.readU8(RTCSecReg))
+	min = RTC.readU8(RTCMinReg)
+	hrs = RTC.readU8(RTCHourReg)
+	return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
 # this function gets the current logging information
 def getCurrentLoggingInformation():
     min, sec = divmod(systemTimer, 60)
     hrs, min = divmod(min, 60)
 
-    RTCTime = datetime.datetime.now().strftime("%H:%M:%S")  # NOTE - INTERFACE WITH RTC HERE
+    RTCTime = getTimeFromRTC()  # NOTE - INTERFACE WITH RTC HERE
     systemTimerValue = "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
     potentiometerValue = convertPotentiometer(getADCValue(potentiometer))
@@ -207,7 +252,7 @@ if __name__ == "__main__":
     # make sure the GPIO is stopped correctly
     try:
 
-        os.system('clear')
+        #os.system('clear')
         print("Ready...")
         print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
                                                       "Light"))  # 5 values to printed to screen (7 in total - add others later)
@@ -225,7 +270,7 @@ if __name__ == "__main__":
         # turn off GPIOs
         GPIO.cleanup()
 
-    except e:
+    except Exception as e:
 
         print("Some other error occurred")
         print(e.message)
