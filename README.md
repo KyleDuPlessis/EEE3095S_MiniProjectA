@@ -11,6 +11,6 @@ software, and processing operations are applied to read the data.
 Run program:
 ----
 ```sh
-$ chmod +x main.py
-$ ./main.py
+$ chmod +x MiniProjectA.py
+$ ./MiniProjectA.py
 ```
