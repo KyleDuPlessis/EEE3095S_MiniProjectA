@@ -95,8 +95,8 @@ temperatureSensor = 1
 lightSensor = 7
 
 # reference values for light sensor according to datasheet
-lightSensor_MAX = 950  # when shining phone torch at light sensor
-lightSensor_MIN = 50  # when holding finger over light sensor
+lightSensor_MIN = 50.0   # when shining phone torch at light sensor 
+lightSensor_MAX = 950.0  # when holding finger over light sensor
 
 # reference values for temperature sensor according to datasheet
 V0 = 0.5
@@ -105,7 +105,7 @@ Tc = 0.01
 # other global variables
 systemTimer = 0  # system timer starts at 00:00:00
 monitoringEnabled = True  # start monitoring
-readingInterval = 2  # set reading interval to 1 second initially
+readingInterval = 1  # set reading interval to 1 second initially
 programClosed = False
 
 # set mode to BOARD pin numbering system
@@ -214,8 +214,12 @@ def convertTemperatureSensor(ADCValue):
 
 # this function reports a value between 0 and 1023
 def convertLightSensor(ADCValue):
-    value = (ADCValue - lightSensor_MIN) / (
-            lightSensor_MAX - lightSensor_MIN)  # [check if calculation is correct / reports correct value between 0 and 1023]
+    print(ADCValue)
+    ADCValue = min(ADCValue, lightSensor_MAX)
+    print(ADCValue)
+    ADCValue = max(ADCValue - lightSensor_MIN, 0)
+    print(ADCValue)
+    value = (1 - ((ADCValue) / lightSensor_MAX ))*100 # [check if calculation is correct / reports correct value between 0 and 1023]
     return "{:.0f}%".format(value)
 
 #Convert from RTC BCD to int
