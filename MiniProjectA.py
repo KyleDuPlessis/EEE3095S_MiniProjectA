@@ -96,7 +96,7 @@ lightSensor = 7
 
 # reference values for light sensor according to datasheet
 lightSensor_MIN = 50.0   # when shining phone torch at light sensor 
-lightSensor_MAX = 950.0  # when holding finger over light sensor
+lightSensor_MAX = 1023.0  # when holding finger over light sensor
 
 # reference values for temperature sensor according to datasheet
 V0 = 0.5
@@ -204,7 +204,6 @@ def convertPotentiometer(ADCValue):
     voltageValue = ADCValue * (3.3 / 1023)
     return "{:.2f} V".format(voltageValue)
 
-
 # this function converts the ADC value to degrees Celsius
 def convertTemperatureSensor(ADCValue):
     voltageValue = ADCValue * (3.3 / 1023)
@@ -215,8 +214,9 @@ def convertTemperatureSensor(ADCValue):
 # this function reports a value between 0 and 1023
 def convertLightSensor(ADCValue):
     ADCValue = min(ADCValue, lightSensor_MAX)
-    ADCValue = max(ADCValue - lightSensor_MIN, 0)
-    value = (1 - ((ADCValue) / lightSensor_MAX ))*100 
+    ADCValue -= lightSensor_MIN
+    ADCValue = max(ADCValue, 0)
+    value = (1 - ((ADCValue) / (lightSensor_MAX - lightSensor_MIN) ))*100 
     return "{:.0f}%".format(value)
 
 #Convert from RTC BCD to int
