@@ -105,7 +105,7 @@ Tc = 0.01
 # other global variables
 systemTimer = 0  # system timer starts at 00:00:00
 monitoringEnabled = True  # start monitoring
-readingInterval = 1  # set reading interval to 1 second initially
+readingInterval = 2  # set reading interval to 1 second initially
 programClosed = False
 
 # set mode to BOARD pin numbering system
@@ -256,8 +256,9 @@ def getCurrentLoggingInformation():
 
 # main function - program logic
 def main():
+	global readingInterval
 	displayLoggingInformation()
-	time.sleep(1)
+	time.sleep(readingInterval)
     # pass # waiting for button presses - keep program running
     #x = 1
     #print("write your logic here")
@@ -272,7 +273,7 @@ if __name__ == "__main__":
         print("Ready...")
         print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
                                                       "Light"))  # 5 values to printed to screen (7 in total - add others later)
-        displayLoggingInformation()
+        #displayLoggingInformation() not needed here
 
         # waiting for button presses - keep program running
         while True:
