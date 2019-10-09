@@ -214,12 +214,9 @@ def convertTemperatureSensor(ADCValue):
 
 # this function reports a value between 0 and 1023
 def convertLightSensor(ADCValue):
-    print(ADCValue)
     ADCValue = min(ADCValue, lightSensor_MAX)
-    print(ADCValue)
     ADCValue = max(ADCValue - lightSensor_MIN, 0)
-    print(ADCValue)
-    value = (1 - ((ADCValue) / lightSensor_MAX ))*100 # [check if calculation is correct / reports correct value between 0 and 1023]
+    value = (1 - ((ADCValue) / lightSensor_MAX ))*100 
     return "{:.0f}%".format(value)
 
 #Convert from RTC BCD to int
