@@ -49,7 +49,7 @@ MISO = 9
 CLK = 11
 CS = 8
 
-#Get I2C RTC Connection
+# Get I2C RTC Connection
 RTCAddr = 0x6f
 RTCSecReg = 0x00
 RTCMinReg = 0x01
@@ -57,7 +57,8 @@ RTCHourReg = 0x02
 TIMEZONE = 2
 RTC = I2C.get_i2c_device(RTCAddr)
 
-#Convert int to RTC BCD seconds
+
+# Convert int to RTC BCD seconds
 def decCompensation(units):
     unitsU = units % 10;
 
@@ -70,21 +71,22 @@ def decCompensation(units):
     elif (units >= 20):
         units = 0x20 + unitsU;
     elif (units >= 10):
-	units = 0x10 + unitsU;
+        units = 0x10 + unitsU;
     return units;
 
-#init RTC
-#get current time
+
+# init RTC
+# get current time
 currentDate = datetime.datetime.now()
-#Set masks
+# Set masks
 RTCSecMask = 0b10000000
 RTCMinMask = 0b0
 RTCHourMask = 0b0
-#Get current Time
+# Get current Time
 startSec = int(currentDate.strftime("%S"))
 startMin = int(currentDate.strftime("%M"))
 startHour = int(currentDate.strftime("%H"))
-#Update RTC
+# Update RTC
 RTC.write8(RTCSecReg, RTCSecMask | decCompensation(startSec))
 RTC.write8(RTCMinReg, RTCMinMask | decCompensation(startMin))
 RTC.write8(RTCHourReg, RTCHourMask | decCompensation(startHour))
@@ -95,7 +97,7 @@ temperatureSensor = 1
 lightSensor = 7
 
 # reference values for light sensor according to datasheet
-lightSensor_MIN = 50.0   # when shining phone torch at light sensor 
+lightSensor_MIN = 50.0  # when shining phone torch at light sensor
 lightSensor_MAX = 1023.0  # when holding finger over light sensor
 
 # reference values for temperature sensor according to datasheet
@@ -189,8 +191,8 @@ def displayLoggingInformation():
                                                           loggingInformationLine[4]))
 
         # create a thread for reading from the ADC
-        #threading.Timer(readingInterval, displayLoggingInformation).start()
-        #systemTimer += readingInterval Moved to update with rtc
+        # threading.Timer(readingInterval, displayLoggingInformation).start()
+        # systemTimer += readingInterval Moved to update with rtc
 
 
 # ADC functionality
@@ -204,6 +206,7 @@ def convertPotentiometer(ADCValue):
     voltageValue = ADCValue * (3.3 / 1023)
     return "{:.2f} V".format(voltageValue)
 
+
 # this function converts the ADC value to degrees Celsius
 def convertTemperatureSensor(ADCValue):
     voltageValue = ADCValue * (3.3 / 1023)
@@ -213,41 +216,44 @@ def convertTemperatureSensor(ADCValue):
 
 # this function reports a value between 0 and 1023
 def convertLightSensor(ADCValue):
-    #ADCValue = min(ADCValue, lightSensor_MAX)
-    #ADCValue -= lightSensor_MIN
-    #ADCValue = max(ADCValue, 0)
-    #value = (1 - ((ADCValue) / (lightSensor_MAX - lightSensor_MIN) ))*100 
+    # ADCValue = min(ADCValue, lightSensor_MAX)
+    # ADCValue -= lightSensor_MIN
+    # ADCValue = max(ADCValue, 0)
+    # value = (1 - ((ADCValue) / (lightSensor_MAX - lightSensor_MIN) ))*100
     value = ADCValue
     return "{:.0f}".format(value)
 
-#Convert from RTC BCD to int
-def convertRTCBCDtoInt(bcd):
-	firstDigit = bcd & 0b00001111
-	secondDigit = (bcd & 0b01110000) >> 4;
-	return secondDigit*10 + firstDigit
 
-#Gets the time from RTC
+# Convert from RTC BCD to int
+def convertRTCBCDtoInt(bcd):
+    firstDigit = bcd & 0b00001111
+    secondDigit = (bcd & 0b01110000) >> 4;
+    return secondDigit * 10 + firstDigit
+
+
+# Gets the time from RTC
 def getTimeFromRTCandUpdateSystemTimer():
-	global systemTimer
-	global startHours
-	global startMin
-	global startSec
-	
-	sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
-	min = convertRTCBCDtoInt(RTC.readU8(RTCMinReg))
-	hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
-	
-	systemTimer = (hrs*3600 + min*60 + sec) - (startHour*3600 + startMin*60 + startSec) 
-	
-	return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
+    global systemTimer
+    global startHours
+    global startMin
+    global startSec
+
+    sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
+    min = convertRTCBCDtoInt(RTC.readU8(RTCMinReg))
+    hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
+
+    systemTimer = (hrs * 3600 + min * 60 + sec) - (startHour * 3600 + startMin * 60 + startSec)
+
+    return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
+
 
 # this function gets the current logging information
 def getCurrentLoggingInformation():
     RTCTime = getTimeFromRTCandUpdateSystemTimer()
-    
+
     min, sec = divmod(systemTimer, 60)
     hrs, min = divmod(min, 60)
-    
+
     systemTimerValue = "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
     potentiometerValue = convertPotentiometer(getADCValue(potentiometer))
@@ -256,14 +262,17 @@ def getCurrentLoggingInformation():
 
     return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue]
 
+
 # main function - program logic
 def main():
-	global readingInterval
-	displayLoggingInformation()
-	time.sleep(readingInterval)
-    # pass # waiting for button presses - keep program running
-    #x = 1
-    #print("write your logic here")
+    global readingInterval
+    displayLoggingInformation()
+    time.sleep(readingInterval)
+
+
+# pass # waiting for button presses - keep program running
+# x = 1
+# print("write your logic here")
 
 # only run the functions if
 if __name__ == "__main__":
@@ -271,11 +280,11 @@ if __name__ == "__main__":
     # make sure the GPIO is stopped correctly
     try:
 
-        #os.system('clear')
+        # os.system('clear')
         print("Ready...")
         print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
                                                       "Light"))  # 5 values to printed to screen (7 in total - add others later)
-        #displayLoggingInformation() not needed here
+        # displayLoggingInformation() not needed here
 
         # waiting for button presses - keep program running
         while True:
