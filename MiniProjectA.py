@@ -82,7 +82,7 @@ RTCHourMask = 0b0
 #Update RTC
 RTC.write8(RTCSecReg, RTCSecMask | decCompensation(int(currentDate.strftime("%S"))))
 RTC.write8(RTCMinReg, RTCMinMask | int(currentDate.strftime("%M")))
-RTC.write8(RTCHourReg, RTCHourMask | int(currentDate.strftime("%H")))
+RTC.write8(RTCHourReg, RTCHourMask | decCompensation(int(currentDate.strftime("%H"))))
 
 # ADC analog input pins (CH0-CH7)
 potentiometer = 0
@@ -213,17 +213,17 @@ def convertLightSensor(ADCValue):
             lightSensor_MAX - lightSensor_MIN)  # [check if calculation is correct / reports correct value between 0 and 1023]
     return "{:.0f}%".format(value)
 
-#Convert from BCD to int
-def convertRTCSecBCDtoInt(bcd):
+#Convert from RTC BCD to int
+def convertRTCBCDtoInt(bcd):
 	firstDigit = bcd & 0b00001111
 	secondDigit = (bcd & 0b01110000) >> 4;
 	return secondDigit*10 + firstDigit
 
 #Gets the time from RTC
 def getTimeFromRTC():
-	sec = convertRTCSecBCDtoInt(RTC.readU8(RTCSecReg))
+	sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
 	min = RTC.readU8(RTCMinReg)
-	hrs = RTC.readU8(RTCHourReg)
+	hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
 	return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
 # this function gets the current logging information
