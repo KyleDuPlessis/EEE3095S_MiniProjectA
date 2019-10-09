@@ -31,6 +31,7 @@ import RPi.GPIO as GPIO
 import Adafruit_MCP3008
 import datetime
 import threading
+import time
 import os
 import Adafruit_GPIO.I2C as I2C
 
@@ -79,10 +80,14 @@ currentDate = datetime.datetime.now()
 RTCSecMask = 0b10000000
 RTCMinMask = 0b0
 RTCHourMask = 0b0
+#Get current Time
+startSec = int(currentDate.strftime("%S"))
+startMin = int(currentDate.strftime("%M"))
+startHour = int(currentDate.strftime("%H"))
 #Update RTC
-RTC.write8(RTCSecReg, RTCSecMask | decCompensation(int(currentDate.strftime("%S"))))
-RTC.write8(RTCMinReg, RTCMinMask | int(currentDate.strftime("%M")))
-RTC.write8(RTCHourReg, RTCHourMask | decCompensation(int(currentDate.strftime("%H"))))
+RTC.write8(RTCSecReg, RTCSecMask | decCompensation(startSec))
+RTC.write8(RTCMinReg, RTCMinMask | decCompensation(startMin))
+RTC.write8(RTCHourReg, RTCHourMask | decCompensation(startHour))
 
 # ADC analog input pins (CH0-CH7)
 potentiometer = 0
@@ -184,8 +189,8 @@ def displayLoggingInformation():
                                                           loggingInformationLine[4]))
 
         # create a thread for reading from the ADC
-        threading.Timer(readingInterval, displayLoggingInformation).start()
-        systemTimer += readingInterval
+        #threading.Timer(readingInterval, displayLoggingInformation).start()
+        #systemTimer += readingInterval Moved to update with rtc
 
 
 # ADC functionality
@@ -220,18 +225,27 @@ def convertRTCBCDtoInt(bcd):
 	return secondDigit*10 + firstDigit
 
 #Gets the time from RTC
-def getTimeFromRTC():
+def getTimeFromRTCandUpdateSystemTimer():
+	global systemTimer
+	global startHours
+	global startMin
+	global startSec
+	
 	sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
-	min = RTC.readU8(RTCMinReg)
+	min = convertRTCBCDtoInt(RTC.readU8(RTCMinReg))
 	hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
+	
+	systemTimer = (hrs*3600 + min*60 + sec) - (startHour*3600 + startMin*60 + startSec) 
+	
 	return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
 # this function gets the current logging information
 def getCurrentLoggingInformation():
+    RTCTime = getTimeFromRTCandUpdateSystemTimer()
+    
     min, sec = divmod(systemTimer, 60)
     hrs, min = divmod(min, 60)
-
-    RTCTime = getTimeFromRTC()  # NOTE - INTERFACE WITH RTC HERE
+    
     systemTimerValue = "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
 
     potentiometerValue = convertPotentiometer(getADCValue(potentiometer))
@@ -242,7 +256,9 @@ def getCurrentLoggingInformation():
 
 # main function - program logic
 def main():
-    pass # waiting for button presses - keep program running
+	displayLoggingInformation()
+	time.sleep(1)
+    # pass # waiting for button presses - keep program running
     #x = 1
     #print("write your logic here")
 
