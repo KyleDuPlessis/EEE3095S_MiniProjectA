@@ -210,7 +210,7 @@ def convertPotentiometer(ADCValue):
 # this function converts the ADC value to degrees Celsius
 def convertTemperatureSensor(ADCValue):
     voltageValue = ADCValue * (3.3 / 1023)
-    degreesCelsiusValue = (voltageValue) / Tc  # calculation according to datasheet
+    degreesCelsiusValue = (voltageValue - V0) / Tc  # calculation according to datasheet
     return "{:.1f} C".format(degreesCelsiusValue)
 
 
