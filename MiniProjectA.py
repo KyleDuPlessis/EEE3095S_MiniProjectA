@@ -138,7 +138,7 @@ GPIO.setup(CS, GPIO.OUT)
 
 #Setup PWM Alarm
 GPIO.setup(PWM0, GPIO.OUT)
-Alarm = GPIO.PWM(PWM0, 1000)
+Alarm = GPIO.PWM(PWM0, 2)
 Alarm.start(0);	
 Alarm.ChangeDutyCycle(0)
 
@@ -213,6 +213,7 @@ def pressStopStartMonitoringButton(arg):
 def dismissAlarm(arg):
     if (GPIO.input(arg) == GPIO.LOW):
     	values["alarm"] = False
+    	Alarm.ChangeDutyCycle(0)
 
 
 # inputs - interrupts and edge detection
@@ -264,14 +265,7 @@ def updateAlarm():
 					lastSound = systemTimer
 					values["alarm"] = True
 					soundBefore = True
-			if(values["alarm"]):
-				if(alarmValHigh):
-					Alarm.ChangeDutyCycle(100)
-				else:
-					Alarm.ChangeDutyCycle(0)
-				alarmValHigh = not alarmValHigh	
-			else:
-				Alarm.ChangeDutyCycle(0)	
+					Alarm.ChangeDutyCycle(50)
 		time.sleep(float(readingInterval)/10.0)
 
 # system timer functionality
