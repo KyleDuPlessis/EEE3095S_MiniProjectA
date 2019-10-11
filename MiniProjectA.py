@@ -264,13 +264,14 @@ def updateAlarm():
 					lastSound = systemTimer
 					values["alarm"] = True
 					soundBefore = True
-					Alarm.ChangeDutyCycle(100)
 			if(values["alarm"]):
 				if(alarmValHigh):
 					Alarm.ChangeDutyCycle(100)
 				else:
 					Alarm.ChangeDutyCycle(0)
-				alarmValHigh = not alarmValHigh		
+				alarmValHigh = not alarmValHigh	
+			else:
+				Alarm.ChangeDutyCycle(0)	
 		time.sleep(float(readingInterval)/10.0)
 
 # system timer functionality
