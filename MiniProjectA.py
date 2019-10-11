@@ -243,7 +243,7 @@ def updateValues():
 			systemTimer = values["rtcTime"] - (startHour * 3600 + startMin * 60 + startSec)
 			
 			values["humidity"] = getADCValue(potentiometer) * (3.3 / 1023)
-   			values["temp"] = ((((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc) - 32)*(5.0/9.0)
+   			values["temp"] = ((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc
    			values["light"] = getADCValue(lightSensor)
    			values["dacOut"] = (values["light"]/1023.0)*values["humidity"]
    			writeToDac(values["dacOut"]);
