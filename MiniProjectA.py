@@ -34,6 +34,7 @@ import threading
 import time
 import os
 import Adafruit_GPIO.I2C as I2C
+import spidev
 
 # initialise global variables
 
@@ -42,12 +43,18 @@ import Adafruit_GPIO.I2C as I2C
 resetSystemTimerButton = 17
 changeReadingIntervalButton = 27
 stopStartMonitoringButton = 22
+dismissAlarmButton = 4
 
 # SPI0 ADC pins
 MOSI = 10
 MISO = 9
 CLK = 11
 CS = 8
+
+#PWM Alarm
+PWM0 = 12
+#PWM DAC
+PWM1 = 13
 
 # Get I2C RTC Connection
 RTCAddr = 0x6f
@@ -56,7 +63,6 @@ RTCMinReg = 0x01
 RTCHourReg = 0x02
 TIMEZONE = 2
 RTC = I2C.get_i2c_device(RTCAddr)
-
 
 # Convert int to RTC BCD seconds
 def decCompensation(units):
@@ -100,6 +106,10 @@ lightSensor = 7
 lightSensor_MIN = 50.0  # when shining phone torch at light sensor
 lightSensor_MAX = 1023.0  # when holding finger over light sensor
 
+#Alarm constants
+dacVoltMin = 0.65
+dacVoltMax = 2.65
+
 # reference values for temperature sensor according to datasheet
 V0 = 0.5
 Tc = 0.01
@@ -118,12 +128,25 @@ GPIO.setwarnings(False)
 GPIO.setup(resetSystemTimerButton, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(changeReadingIntervalButton, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(stopStartMonitoringButton, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(dismissAlarmButton, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-# configure SPI pins as input / output respectively
+# configure SPI0 ADC pins as input / output respectively
 GPIO.setup(MOSI, GPIO.OUT)
 GPIO.setup(MISO, GPIO.IN)
 GPIO.setup(CLK, GPIO.OUT)
 GPIO.setup(CS, GPIO.OUT)
+
+#Setup PWM Alarm
+GPIO.setup(PWM0, GPIO.OUT)
+Alarm = GPIO.PWM(PWM0, 1000)
+Alarm.start(0);	
+Alarm.ChangeDutyCycle(0)
+
+#Setup PWM DAC
+GPIO.setup(PWM1, GPIO.OUT)
+DAC = GPIO.PWM(PWM1, 1000)
+DAC.start(0);
+DAC.ChangeDutyCycle(0)
 
 # create an ADC object
 adc = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, mosi=MOSI, miso=MISO)
@@ -139,12 +162,21 @@ values = {
 }
 valuesUpdatorIsReady = False
 
+def writeToDac(voltage):
+	val = int((voltage/3.3)*100)
+	DAC.ChangeDutyCycle(val)
+
 # button functionality
 # this function resets the system timer on button press
 def pressResetSystemTimerButton(arg):
     if (GPIO.input(arg) == GPIO.LOW):
         global systemTimer  # reset system timer
-        systemTimer = 0
+        global startSec
+        global startMin
+        global startHour
+        systemTimer = 0;
+        startMin, startSec = divmod(values["rtcTime"], 60)
+	startHour, startMin = divmod(startMin, 60)
         os.system('clear')  # clean console window
         print("Reset button pressed - system timer has been reset.")  # print out confirmation message for test cases
 
@@ -176,6 +208,11 @@ def pressStopStartMonitoringButton(arg):
         else:
             print(
                 "Stop / start monitoring button pressed - monitoring disabled.")  # print out confirmation message for test cases
+                
+# this function stops / starts monitoring on button press without affecting the system timer
+def dismissAlarm(arg):
+    if (GPIO.input(arg) == GPIO.LOW):
+    	values["alarm"] = False
 
 
 # inputs - interrupts and edge detection
@@ -186,10 +223,13 @@ GPIO.add_event_detect(changeReadingIntervalButton, GPIO.FALLING, callback=pressC
                       bouncetime=200)  # set callback function to pressChangeReadingIntervalButton function
 GPIO.add_event_detect(stopStartMonitoringButton, GPIO.FALLING, callback=pressStopStartMonitoringButton,
                       bouncetime=200)  # set callback function to pressStopStartMonitoringButton function
+GPIO.add_event_detect(dismissAlarmButton, GPIO.FALLING, callback=dismissAlarm,
+                      bouncetime=200)  # set callback function to dismissAlarm function
 
 def updateValues():
 	global systemTimer
 	global valuesUpdatorIsReady
+	
 	while(not programClosed):
 		if (monitoringEnabled):	
 			valuesUpdatorIsReady = False
@@ -206,12 +246,32 @@ def updateValues():
    			values["temp"] = ((((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc) - 32)*(5.0/9.0)
    			values["light"] = getADCValue(lightSensor)
    			values["dacOut"] = (values["light"]/1023.0)*values["humidity"]
+   			writeToDac(values["dacOut"]);
    			
    			valuesUpdatorIsReady = True
 	   	time.sleep(float(readingInterval)/10.0)
 
 def updateAlarm():
-	return 0
+	global systemTimer
+	lastSound = systemTimer
+	soundBefore = False
+	alarmValHigh = False
+	
+	while(not programClosed):  # only continue if parent thread is running
+		if (monitoringEnabled):
+			if(systemTimer - lastSound > 2.9 or not soundBefore):
+				if(values["dacOut"] > dacVoltMax or values["dacOut"] < dacVoltMin):
+					lastSound = systemTimer
+					values["alarm"] = True
+					soundBefore = True
+					Alarm.ChangeDutyCycle(100)
+			if(values["alarm"]):
+				if(alarmValHigh):
+					Alarm.ChangeDutyCycle(100)
+				else:
+					Alarm.ChangeDutyCycle(0)
+				alarmValHigh = not alarmValHigh		
+		time.sleep(float(readingInterval)/10.0)
 
 # system timer functionality
 # this function displays the logging information
@@ -221,9 +281,6 @@ def displayLoggingInformation():
 	lastUpdated = systemTimer
 	print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
     		"RTC Time", "Sys Timer", "Humidity", "Temp", "Light", "DAC out", "Alarm"))
-    		
-    	while(not valuesUpdatorIsReady):
-    		time.sleep(float(readingInterval)/20.0)
     		
     	loggingInformationLine = getCurrentLoggingInformation()
 	print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
@@ -327,6 +384,10 @@ if __name__ == "__main__":
         # os.system('clear')
         print("Starting threads...") 
         valuesUpdator.start()
+        
+        while(not valuesUpdatorIsReady):
+    		time.sleep(float(readingInterval)/20.0)
+        
         alarm.start()
         print("Ready...")
         
