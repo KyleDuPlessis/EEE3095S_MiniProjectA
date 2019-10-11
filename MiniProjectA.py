@@ -128,6 +128,16 @@ GPIO.setup(CS, GPIO.OUT)
 # create an ADC object
 adc = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, mosi=MOSI, miso=MISO)
 
+#Thread values
+values = {
+	"rtcTime" : 0,
+	"humidity" : 0,
+	"temp" : 0,
+	"light" : 0,
+	"dacOut" : 0.0,
+	"alarm" : False
+}
+valuesUpdatorIsReady = False
 
 # button functionality
 # this function resets the system timer on button press
@@ -177,23 +187,71 @@ GPIO.add_event_detect(changeReadingIntervalButton, GPIO.FALLING, callback=pressC
 GPIO.add_event_detect(stopStartMonitoringButton, GPIO.FALLING, callback=pressStopStartMonitoringButton,
                       bouncetime=200)  # set callback function to pressStopStartMonitoringButton function
 
+def updateValues():
+	global systemTimer
+	global valuesUpdatorIsReady
+	while(not programClosed):
+		if (monitoringEnabled):	
+			valuesUpdatorIsReady = False
+					
+			sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
+			min = convertRTCBCDtoInt(RTC.readU8(RTCMinReg))
+			hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
+
+			values["rtcTime"] = (hrs * 3600 + min * 60 + sec)
+			
+			systemTimer = values["rtcTime"] - (startHour * 3600 + startMin * 60 + startSec)
+			
+			values["humidity"] = getADCValue(potentiometer) * (3.3 / 1023)
+   			values["temp"] = ((((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc) - 32)*(5.0/9.0)
+   			values["light"] = getADCValue(lightSensor)
+   			values["dacOut"] = (values["light"]/1023.0)*values["humidity"]
+   			
+   			valuesUpdatorIsReady = True
+	   	time.sleep(float(readingInterval)/10.0)
+
+def updateAlarm():
+	return 0
 
 # system timer functionality
 # this function displays the logging information
 def displayLoggingInformation():
-    if (not programClosed):  # only continue if parent thread is running
-        global systemTimer
-        if (monitoringEnabled):
-            loggingInformationLine = getCurrentLoggingInformation()
-            # print out current logging information line
-            print("{:<15}{:<15}{:<15}{:<15}{:<15}".format(loggingInformationLine[0], loggingInformationLine[1],
-                                                          loggingInformationLine[2], loggingInformationLine[3],
-                                                          loggingInformationLine[4]))
-
-        # create a thread for reading from the ADC
-        # threading.Timer(readingInterval, displayLoggingInformation).start()
-        # systemTimer += readingInterval Moved to update with rtc
-
+	global systemTimer
+	global valuesUpdatorIsReady
+	lastUpdated = systemTimer
+	print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
+    		"RTC Time", "Sys Timer", "Humidity", "Temp", "Light", "DAC out", "Alarm"))
+    		
+    	while(not valuesUpdatorIsReady):
+    		time.sleep(float(readingInterval)/20.0)
+    		
+    	loggingInformationLine = getCurrentLoggingInformation()
+	print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
+								loggingInformationLine[0],
+ 								loggingInformationLine[1],
+				          			loggingInformationLine[2], 
+				          			loggingInformationLine[3],
+				          			loggingInformationLine[4],
+				          			loggingInformationLine[5],
+				          			loggingInformationLine[6]
+				          		 ))
+    		
+	while(not programClosed):  # only continue if parent thread is running
+		if (monitoringEnabled):
+			if(systemTimer - lastUpdated > readingInterval-0.1):
+				lastUpdated = systemTimer
+				loggingInformationLine = getCurrentLoggingInformation()
+				# print out current logging information line
+				print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
+											loggingInformationLine[0],
+			 								loggingInformationLine[1],
+							          			loggingInformationLine[2], 
+							          			loggingInformationLine[3],
+							          			loggingInformationLine[4],
+							          			loggingInformationLine[5],
+							          			loggingInformationLine[6]
+							          		 ))
+		time.sleep(float(readingInterval)/5.0)
 
 # ADC functionality
 # this function gets the ADC value from the ADC analog input pins (CH0-CH7)
@@ -202,26 +260,18 @@ def getADCValue(ADCValue):
 
 
 # this function converts the ADC value to a fraction of 3.3V
-def convertPotentiometer(ADCValue):
-    voltageValue = ADCValue * (3.3 / 1023)
-    return "{:.2f} V".format(voltageValue)
+def convertPotentiometer():
+    return "{:.2f} V".format(values["humidity"])
 
 
 # this function converts the ADC value to degrees Celsius
-def convertTemperatureSensor(ADCValue):
-    voltageValue = ADCValue * (3.3 / 1023)
-    degreesCelsiusValue = (voltageValue - V0) / Tc  # calculation according to datasheet
-    return "{:.1f} C".format(degreesCelsiusValue)
+def convertTemperatureSensor():
+    return "{:.1f} C".format(values["temp"])
 
 
 # this function reports a value between 0 and 1023
-def convertLightSensor(ADCValue):
-    # ADCValue = min(ADCValue, lightSensor_MAX)
-    # ADCValue -= lightSensor_MIN
-    # ADCValue = max(ADCValue, 0)
-    # value = (1 - ((ADCValue) / (lightSensor_MAX - lightSensor_MIN) ))*100
-    value = ADCValue
-    return "{:.0f}".format(value)
+def convertLightSensor():
+    return "{:.0f}".format(values["light"])
 
 
 # Convert from RTC BCD to int
@@ -232,61 +282,54 @@ def convertRTCBCDtoInt(bcd):
 
 
 # Gets the time from RTC
-def getTimeFromRTCandUpdateSystemTimer():
-    global systemTimer
-    global startHours
-    global startMin
-    global startSec
-
-    sec = convertRTCBCDtoInt(RTC.readU8(RTCSecReg))
-    min = convertRTCBCDtoInt(RTC.readU8(RTCMinReg))
-    hrs = convertRTCBCDtoInt(RTC.readU8(RTCHourReg))
-
-    systemTimer = (hrs * 3600 + min * 60 + sec) - (startHour * 3600 + startMin * 60 + startSec)
-
-    return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
+def formatTime(time):
+	min, sec = divmod(time, 60)
+	hrs, min = divmod(min, 60)	
+	return "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
+    
+# Gets the time from RTC
+def getDACOutValue():
+	return "{:02.2f}".format(values["dacOut"])
+    
+# Gets the time from RTC
+def getAlarmValue():
+	if(values["alarm"]):
+		return "*"
+	return ""
 
 
 # this function gets the current logging information
 def getCurrentLoggingInformation():
-    RTCTime = getTimeFromRTCandUpdateSystemTimer()
+    RTCTime = formatTime(values["rtcTime"])
+    systemTimerValue = formatTime(systemTimer)
 
-    min, sec = divmod(systemTimer, 60)
-    hrs, min = divmod(min, 60)
+    potentiometerValue = convertPotentiometer()
+    temperatureSensorValue = convertTemperatureSensor()
+    lightSensorValue = convertLightSensor()
+    dacOutValue = getDACOutValue()
+    alarmValue = getAlarmValue()
 
-    systemTimerValue = "{:02.0f}:{:02.0f}:{:04.1f}".format(hrs, min, sec)
-
-    potentiometerValue = convertPotentiometer(getADCValue(potentiometer))
-    temperatureSensorValue = convertTemperatureSensor(getADCValue(temperatureSensor))
-    lightSensorValue = convertLightSensor(getADCValue(lightSensor))
-
-    return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue]
-
-
+    return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue, dacOutValue, alarmValue]
+    
 # main function - program logic
 def main():
-    global readingInterval
     displayLoggingInformation()
-    time.sleep(readingInterval)
-
-
-# pass # waiting for button presses - keep program running
-# x = 1
-# print("write your logic here")
 
 # only run the functions if
 if __name__ == "__main__":
+    print("Creating threads...") 
+    valuesUpdator = threading.Thread(target=updateValues)
+    alarm = threading.Thread(target=updateAlarm)
 
     # make sure the GPIO is stopped correctly
     try:
 
         # os.system('clear')
+        print("Starting threads...") 
+        valuesUpdator.start()
+        alarm.start()
         print("Ready...")
-        print("{:<15}{:<15}{:<15}{:<15}{:<15}".format("RTC Time", "Sys Timer", "Humidity", "Temp",
-                                                      "Light"))  # 5 values to printed to screen (7 in total - add others later)
-        # displayLoggingInformation() not needed here
-
-        # waiting for button presses - keep program running
+        
         while True:
             main()
 
@@ -295,6 +338,11 @@ if __name__ == "__main__":
         print("Exiting gracefully")
         # release all resources
         programClosed = True
+        
+        #wait for threads
+        valuesUpdator.join()
+        alarm.join()
+        
         # turn off GPIOs
         GPIO.cleanup()
 
@@ -304,5 +352,11 @@ if __name__ == "__main__":
         print(e.message)
         # release all resources
         programClosed = True
+        
+         #wait for threads
+        valuesUpdator.join()
+        logger.join()
+        alarm.join()
+        
         # turn off GPIOs
         GPIO.cleanup()
