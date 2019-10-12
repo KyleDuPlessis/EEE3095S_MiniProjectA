@@ -54,7 +54,7 @@ import spidev
 import blynklib
 import random
 
-BLYNK_AUTH = 'Ui8zBgkyzsq0vUVDJMwxix5jWKSFk8nS'
+BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
 
 # initialize blynk
 blynk = blynklib.Blynk(BLYNK_AUTH)
