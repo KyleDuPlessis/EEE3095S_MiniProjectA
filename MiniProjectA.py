@@ -273,7 +273,7 @@ def updateAlarm():
 	
 	while(not programClosed):  # only continue if parent thread is running
 		if (monitoringEnabled):
-			if(systemTimer - lastSound > 2.9 or not soundBefore):
+			if(systemTimer - lastSound > 179.99 or not soundBefore):
 				if(values["dacOut"] > dacVoltMax or values["dacOut"] < dacVoltMin):
 					lastSound = systemTimer
 					values["alarm"] = True
