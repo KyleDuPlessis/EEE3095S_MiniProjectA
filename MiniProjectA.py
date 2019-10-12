@@ -54,7 +54,7 @@ import spidev
 import blynklib
 import random
 
-BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
+BLYNK_AUTH = 'VZA3ajNZ6o84W5gFqcKM1ip8I8IDJAEL'
 
 # initialize blynk
 blynk = blynklib.Blynk(BLYNK_AUTH)
@@ -348,21 +348,10 @@ def updateAlarm():
 # this function displays the logging information
 def displayLoggingInformation():
     global systemTimer
-    global valuesUpdatorIsReady
     lastUpdated = systemTimer
+    
     print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
         "RTC Time", "Sys Timer", "Humidity", "Temp", "Light", "DAC out", "Alarm"))
-
-    loggingInformationLine = getCurrentLoggingInformation()
-    print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
-        loggingInformationLine[0],
-        loggingInformationLine[1],
-        loggingInformationLine[2],
-        loggingInformationLine[3],
-        loggingInformationLine[4],
-        loggingInformationLine[5],
-        loggingInformationLine[6]
-    ))
 
     while (not programClosed):  # only continue if parent thread is running
         if (monitoringEnabled):
@@ -443,6 +432,11 @@ def getCurrentLoggingInformation():
     return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue, dacOutValue,
             alarmValue]
 
+def blynkFunction():
+	while (not programClosed):
+		blynk.run()
+		time.sleep(float(readingInterval) / 5.0)
+
 
 # main function - program logic
 def main():
@@ -454,6 +448,7 @@ if __name__ == "__main__":
     print("Creating threads...")
     valuesUpdator = threading.Thread(target=updateValues)
     alarm = threading.Thread(target=updateAlarm)
+    blynkThread = threading.Thread(target=blynkFunction)
 
     # make sure the GPIO is stopped correctly
     try:
@@ -466,10 +461,10 @@ if __name__ == "__main__":
             time.sleep(float(readingInterval) / 20.0)
 
         alarm.start()
+        blynkThread.start()
         print("Ready...")
 
         while True:
-            blynk.run()
             main()
 
     except KeyboardInterrupt:
@@ -481,6 +476,7 @@ if __name__ == "__main__":
         # wait for threads
         valuesUpdator.join()
         alarm.join()
+        blynkThread.join()
 
         # turn off GPIOs
         GPIO.cleanup()
@@ -494,8 +490,8 @@ if __name__ == "__main__":
 
         # wait for threads
         valuesUpdator.join()
-        logger.join()
         alarm.join()
+        blynkThread.join()
 
         # turn off GPIOs
         GPIO.cleanup()
