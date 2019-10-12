@@ -49,7 +49,7 @@ import spidev
 
 
 
-
+#https://github.com/blynkkk/lib-python/blob/master/examples/02_read_virtual_pin.py
 
 import blynklib
 import random
