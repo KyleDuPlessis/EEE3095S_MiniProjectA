@@ -36,60 +36,15 @@ import os
 import Adafruit_GPIO.I2C as I2C
 import spidev
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-#https://github.com/blynkkk/lib-python/blob/master/examples/02_read_virtual_pin.py
+# https://github.com/blynkkk/lib-python/blob/master/examples/02_read_virtual_pin.py
 
 import blynklib
-import random
 
-BLYNK_AUTH = 'VZA3ajNZ6o84W5gFqcKM1ip8I8IDJAEL'
+BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
 
 # initialize blynk
 blynk = blynklib.Blynk(BLYNK_AUTH)
 READ_PRINT_MSG = "[READ_VIRTUAL_PIN_EVENT] Pin: V{}"
-
-
-# register handler for virtual pin V11 reading
-@blynk.handle_event('read V11')
-def read_virtual_pin_handler(pin):
-    print(READ_PRINT_MSG.format(pin))
-    blynk.virtual_write(pin, random.randint(0, 255))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # initialise global variables
 
@@ -349,7 +304,7 @@ def updateAlarm():
 def displayLoggingInformation():
     global systemTimer
     lastUpdated = systemTimer
-    
+
     print("{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}{:<15}".format(
         "RTC Time", "Sys Timer", "Humidity", "Temp", "Light", "DAC out", "Alarm"))
 
@@ -369,6 +324,52 @@ def displayLoggingInformation():
                     loggingInformationLine[6]
                 ))
         time.sleep(float(readingInterval) / 5.0)
+
+
+# # register handler for virtual pin V0 [humidity] reading
+# @blynk.handle_event('read V0')
+# def read_virtual_pin_handler(pin):
+#     blynk.virtual_write(pin, convertPotentiometer())
+#
+#
+# # register handler for virtual pin V1 [temperature] reading
+# @blynk.handle_event('read V1')
+# def read_virtual_pin_handler(pin):
+#     blynk.virtual_write(pin, convertTemperatureSensor())
+#
+#
+# # register handler for virtual pin V2 [light] reading
+# @blynk.handle_event('read V2')
+# def read_virtual_pin_handler(pin):
+#     blynk.virtual_write(pin, convertLightSensor())
+#
+#
+# # register handler for virtual pin V3 [alarm] reading
+# @blynk.handle_event('read V3')
+# def read_virtual_pin_handler(pin):
+#     if getAlarmValue() == "*":
+#         blynk.virtual_write(pin, 255)
+#         blynk.set_property(pin, 'color', '#FF0000')
+
+
+VPIN0 = 0
+VPIN1 = 1
+VPIN2 = 2
+VPIN3 = 3
+
+#https://github.com/blynkkk/lib-python/blob/master/examples/raspberry/01_weather_station_pi3b.py
+@blynk.handle_event('read V{}'.format(VPIN0))
+def read_handler(vpin):
+    blynk.virtual_write(VPIN0, convertPotentiometer())
+    blynk.virtual_write(VPIN1, convertTemperatureSensor())
+    blynk.virtual_write(VPIN2, convertLightSensor())
+
+    if getAlarmValue() == "*":
+        blynk.virtual_write(VPIN3, 255)
+
+    else:
+        blynk.virtual_write(VPIN3, 0)
+
 
 
 # ADC functionality
@@ -432,10 +433,11 @@ def getCurrentLoggingInformation():
     return [RTCTime, systemTimerValue, potentiometerValue, temperatureSensorValue, lightSensorValue, dacOutValue,
             alarmValue]
 
+
 def blynkFunction():
-	while (not programClosed):
-		blynk.run()
-		time.sleep(float(readingInterval) / 5.0)
+    while (not programClosed):
+        blynk.run()
+        time.sleep(float(readingInterval) / 5.0)
 
 
 # main function - program logic
