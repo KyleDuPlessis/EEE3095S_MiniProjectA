@@ -148,6 +148,12 @@ DAC = GPIO.PWM(PWM1, 1000)
 DAC.start(0);
 DAC.ChangeDutyCycle(0)
 
+#DAC SPI
+spi_max_speed = 4 * 1000000
+spi = spidev.SpiDev()
+spi.open(0,1)
+spi.max_speed_hz = spi_max_speed
+
 # create an ADC object
 adc = Adafruit_MCP3008.MCP3008(clk=CLK, cs=CS, mosi=MOSI, miso=MISO)
 
@@ -164,8 +170,11 @@ valuesUpdatorIsReady = False
 
 def writeToDac(voltage):
 	val = int((voltage/3.3)*100)
-	DAC.ChangeDutyCycle(val)
-
+	DAC.ChangeDutyCycle(val) #PWM DAC
+	lowByte = val << 2 & 0b11111100
+	highByte = ((val >> 6) & 0xff) | 0b0 << 7 | 0b0 << 6 | 0b1 << 5 | 0b1 << 4
+	spi.xfer2([highByte, lowByte])
+	
 # button functionality
 # this function resets the system timer on button press
 def pressResetSystemTimerButton(arg):
