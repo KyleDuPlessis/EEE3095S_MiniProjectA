@@ -173,10 +173,15 @@ def writeToDac(voltage):
 	DAC.ChangeDutyCycle(PWMVal) #PWM DAC
 	
 	val = int((voltage/3.3)*1023)
-	lowByte = val << 2 & 0b11111100
-	highByte = ((val >> 6) & 0xff) | 0b0 << 7 | 0b0 << 6 | 0b1 << 5 | 0b1 << 4
+	#lowByte = val << 2 & 0b11111100
+	#highByte = ((val >> 6) & 0xff) | 0b0 << 7 | 0b0 << 6 | 0b1 << 5 | 0b1 << 4
 	#print("Highbyte = {0:8b}".format(highByte))
 	#print("Lowbyte =  {0:8b}".format(lowByte))
+	#spi.xfer2([highByte, lowByte])
+	config = 0 * 0x40 + 1 * 0x20 + 1 * 0x10;
+	lowByte = val >> 6;
+	lowByte = lowByte | config;
+	highByte = val << 2;
 	spi.xfer2([highByte, lowByte])
 	
 # button functionality
