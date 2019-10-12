@@ -169,10 +169,14 @@ values = {
 valuesUpdatorIsReady = False
 
 def writeToDac(voltage):
-	val = int((voltage/3.3)*100)
-	DAC.ChangeDutyCycle(val) #PWM DAC
+	PWMVal = int((voltage/3.3)*100)
+	DAC.ChangeDutyCycle(PWMVal) #PWM DAC
+	
+	val = int((voltage/3.3)*1023)
 	lowByte = val << 2 & 0b11111100
 	highByte = ((val >> 6) & 0xff) | 0b0 << 7 | 0b0 << 6 | 0b1 << 5 | 0b1 << 4
+	#print("Highbyte = {0:8b}".format(highByte))
+	#print("Lowbyte =  {0:8b}".format(lowByte))
 	spi.xfer2([highByte, lowByte])
 	
 # button functionality
