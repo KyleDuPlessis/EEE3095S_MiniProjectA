@@ -356,8 +356,10 @@ VPIN0 = 0
 VPIN1 = 1
 VPIN2 = 2
 VPIN3 = 3
+VPIN4 = 4
 
-#https://github.com/blynkkk/lib-python/blob/master/examples/raspberry/01_weather_station_pi3b.py
+displayOnce = 0
+# https://github.com/blynkkk/lib-python/blob/master/examples/raspberry/01_weather_station_pi3b.py
 @blynk.handle_event('read V{}'.format(VPIN0))
 def read_handler(vpin):
     blynk.virtual_write(VPIN0, convertPotentiometer())
@@ -370,6 +372,26 @@ def read_handler(vpin):
     else:
         blynk.virtual_write(VPIN3, 0)
 
+    global displayOnce
+
+    if displayOnce == 0:
+        blynk.virtual_write(VPIN4, "{:<5}{:<5}{:<5}{:<5}{:<5}{:<5}{:<5}".format(
+            "RTC Time", "Sys Timer", "Humidity", "Temp", "Light", "DAC out", "Alarm"))
+        blynk.virtual_write(VPIN4, '\n')
+        displayOnce = 1
+
+    loggingInformationLine = getCurrentLoggingInformation()
+    blynk.virtual_write(VPIN4, "{:<5}{:<5}{:<5}{:<5}{:<5}{:<5}{:<5}".format(
+        loggingInformationLine[0],
+        loggingInformationLine[1],
+        loggingInformationLine[2],
+        loggingInformationLine[3],
+        loggingInformationLine[4],
+        loggingInformationLine[5],
+        loggingInformationLine[6]
+    ))
+
+    blynk.virtual_write(VPIN4, '\n')
 
 
 # ADC functionality
