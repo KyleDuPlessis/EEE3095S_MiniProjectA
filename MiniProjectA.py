@@ -300,7 +300,6 @@ def displayLoggingInformation():
                 ))
         time.sleep(float(readingInterval) / 5.0)
 
-
 # Blynk app
 VPIN0 = 0
 VPIN1 = 1
