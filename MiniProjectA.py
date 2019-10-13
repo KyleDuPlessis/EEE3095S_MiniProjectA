@@ -357,6 +357,8 @@ VPIN1 = 1
 VPIN2 = 2
 VPIN3 = 3
 VPIN4 = 4
+VPIN5 = 5
+VPIN6 = 6
 
 displayOnce = 0
 # https://github.com/blynkkk/lib-python/blob/master/examples/raspberry/01_weather_station_pi3b.py
@@ -365,6 +367,9 @@ def read_handler(vpin):
     blynk.virtual_write(VPIN0, convertPotentiometer())
     blynk.virtual_write(VPIN1, convertTemperatureSensor())
     blynk.virtual_write(VPIN2, convertLightSensor())
+
+    blynk.virtual_write(VPIN5, getDACOutValue() + "V")
+    blynk.virtual_write(VPIN6, formatTime(systemTimer))
 
     if getAlarmValue() == "*":
         blynk.virtual_write(VPIN3, 255)
