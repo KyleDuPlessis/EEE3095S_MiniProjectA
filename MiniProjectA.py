@@ -6,26 +6,6 @@ Kyle du Plessis - DPLKYL002
 Hendri Vermeulen - VRMHEN004
 """
 
-"""
-TO DO LIST:
-
-1. Map variables to pins to be used from GPIO pinout diagram - all currently set to "0"
-
-2. Currently have -> "RTC Time", "Sys Timer", "Humidity", "Temp", "Light"
-(there are 7 in total) - still need to implement the others 
-+ interface with RTC to get the correct RTC Time value to be printed out under "RTC Time"
-
-3. Alarm - "You can flash an LED using a PWM signal, you can play audio through the audio jack, or you
-can buy a buzzer from WhiteLab." 
-There are no buzzers available - got a speaker and will connect to Pi using an aux cable 
-and we can play a sound mp3 audio file buzz sound - but not through the DAC.
-
-[http://soundbible.com/2197-Analog-Watch-Alarm.html]
-
-4. Blynk app once all this ^ is completely done + working
-
-"""
-
 # import relevant libraries
 import RPi.GPIO as GPIO
 import Adafruit_MCP3008
@@ -35,9 +15,6 @@ import time
 import os
 import Adafruit_GPIO.I2C as I2C
 import spidev
-
-# https://github.com/blynkkk/lib-python/blob/master/examples/02_read_virtual_pin.py
-
 import blynklib
 
 BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
@@ -255,7 +232,6 @@ GPIO.add_event_detect(stopStartMonitoringButton, GPIO.FALLING, callback=pressSto
 GPIO.add_event_detect(dismissAlarmButton, GPIO.FALLING, callback=dismissAlarm,
                       bouncetime=200)  # set callback function to dismissAlarm function
 
-
 def updateValues():
     global systemTimer
     global valuesUpdatorIsReady
@@ -276,7 +252,7 @@ def updateValues():
             values["temp"] = ((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc
             values["light"] = getADCValue(lightSensor)
             values["dacOut"] = (values["light"] / 1023.0) * values["humidity"]
-            writeToDac(values["dacOut"]);
+            writeToDac(values["dacOut"])
 
             valuesUpdatorIsReady = True
         time.sleep(float(readingInterval) / 10.0)
@@ -286,7 +262,6 @@ def updateAlarm():
     global systemTimer
     lastSound = systemTimer
     soundBefore = False
-    alarmValHigh = False
 
     while (not programClosed):  # only continue if parent thread is running
         if (monitoringEnabled):
@@ -326,32 +301,7 @@ def displayLoggingInformation():
         time.sleep(float(readingInterval) / 5.0)
 
 
-# # register handler for virtual pin V0 [humidity] reading
-# @blynk.handle_event('read V0')
-# def read_virtual_pin_handler(pin):
-#     blynk.virtual_write(pin, convertPotentiometer())
-#
-#
-# # register handler for virtual pin V1 [temperature] reading
-# @blynk.handle_event('read V1')
-# def read_virtual_pin_handler(pin):
-#     blynk.virtual_write(pin, convertTemperatureSensor())
-#
-#
-# # register handler for virtual pin V2 [light] reading
-# @blynk.handle_event('read V2')
-# def read_virtual_pin_handler(pin):
-#     blynk.virtual_write(pin, convertLightSensor())
-#
-#
-# # register handler for virtual pin V3 [alarm] reading
-# @blynk.handle_event('read V3')
-# def read_virtual_pin_handler(pin):
-#     if getAlarmValue() == "*":
-#         blynk.virtual_write(pin, 255)
-#         blynk.set_property(pin, 'color', '#FF0000')
-
-
+# Blynk app
 VPIN0 = 0
 VPIN1 = 1
 VPIN2 = 2
@@ -361,7 +311,7 @@ VPIN5 = 5
 VPIN6 = 6
 
 displayOnce = 0
-# https://github.com/blynkkk/lib-python/blob/master/examples/raspberry/01_weather_station_pi3b.py
+
 @blynk.handle_event('read V{}'.format(VPIN0))
 def read_handler(vpin):
     blynk.virtual_write(VPIN0, convertPotentiometer())
