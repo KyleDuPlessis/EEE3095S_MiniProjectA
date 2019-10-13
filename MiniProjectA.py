@@ -301,6 +301,7 @@ def displayLoggingInformation():
                 ))
         time.sleep(float(readingInterval) / 5.0)
 
+
 VPIN0 = 0
 VPIN1 = 1
 VPIN2 = 2
@@ -310,6 +311,7 @@ VPIN5 = 5
 VPIN6 = 6
 
 displayOnce = 0
+
 
 @blynk.handle_event('read V{}'.format(VPIN0))
 def read_handler(vpin):
