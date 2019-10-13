@@ -22,6 +22,7 @@ BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
 # initialize blynk
 blynk = blynklib.Blynk(BLYNK_AUTH)
 
+
 # initialise global variables
 
 # select pins to be used from GPIO pinout diagram
