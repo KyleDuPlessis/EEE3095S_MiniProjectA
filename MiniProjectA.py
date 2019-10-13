@@ -21,7 +21,6 @@ BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
 
 # initialize blynk
 blynk = blynklib.Blynk(BLYNK_AUTH)
-READ_PRINT_MSG = "[READ_VIRTUAL_PIN_EVENT] Pin: V{}"
 
 # initialise global variables
 
