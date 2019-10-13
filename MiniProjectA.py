@@ -15,6 +15,7 @@ import time
 import os
 import Adafruit_GPIO.I2C as I2C
 import spidev
+
 import blynklib
 
 BLYNK_AUTH = 'nHPND-wFoLqY5KeLaFvOyKh0OL-RqobF'
@@ -232,6 +233,7 @@ GPIO.add_event_detect(stopStartMonitoringButton, GPIO.FALLING, callback=pressSto
 GPIO.add_event_detect(dismissAlarmButton, GPIO.FALLING, callback=dismissAlarm,
                       bouncetime=200)  # set callback function to dismissAlarm function
 
+
 def updateValues():
     global systemTimer
     global valuesUpdatorIsReady
@@ -252,7 +254,7 @@ def updateValues():
             values["temp"] = ((getADCValue(temperatureSensor) * (3.3 / 1023)) - V0) / Tc
             values["light"] = getADCValue(lightSensor)
             values["dacOut"] = (values["light"] / 1023.0) * values["humidity"]
-            writeToDac(values["dacOut"])
+            writeToDac(values["dacOut"]);
 
             valuesUpdatorIsReady = True
         time.sleep(float(readingInterval) / 10.0)
@@ -300,7 +302,6 @@ def displayLoggingInformation():
                 ))
         time.sleep(float(readingInterval) / 5.0)
 
-# Blynk app
 VPIN0 = 0
 VPIN1 = 1
 VPIN2 = 2
