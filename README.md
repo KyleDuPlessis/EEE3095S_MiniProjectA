@@ -12,5 +12,5 @@ Run program:
 ----
 ```sh
 $ chmod +x MiniProjectA.py
-$ ./MiniProjectA.py
+$ suo python MiniProjectA.py
 ```
