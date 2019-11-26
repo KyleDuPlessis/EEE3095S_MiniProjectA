@@ -3,10 +3,7 @@ Mini-Project A
 ----
 Overview:
 ----
-The objective for this project is to design an environment logger (IoT device).
-This project examines ELO5.2, which requires the student to develop a representative
-embedded system. It requires hardware/software interfacing, so an ADC is sampled by
-software, and processing operations are applied to read the data.
+The objective for this project is to design an environment logger (IoT device). It requires hardware/software interfacing, so an ADC is sampled by software, and processing operations are applied to read the data. The project will require use of a single Raspberry Pi, which relays data to and is controlled via an app on your phone created through Blynk.
 
 Run program:
 ----
